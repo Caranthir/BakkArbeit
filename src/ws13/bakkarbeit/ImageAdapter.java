@@ -1,6 +1,11 @@
 package ws13.bakkarbeit;
 
+import java.util.ArrayList;
+
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -10,15 +15,17 @@ public class ImageAdapter extends BaseAdapter {
     private Context mContext;
 
     public ImageAdapter(Context c) {
+        System.out.println("dfdsfdsf");
         mContext = c;
     }
 
     public int getCount() {
-        return imageId.size();
+		return photos.size();
+        //return imageId.size();
     }
 
     public Object getItem(int position) {
-        return null;
+        return photos.get(position);
     }
 
     public long getItemId(int position) {
@@ -38,19 +45,18 @@ public class ImageAdapter extends BaseAdapter {
         }
 
 
-        Uri targetUri = Uri.parse(tests.get(0));
+        //Uri targetUri = Uri.parse(photos.get(0));
         //tests contains the uri of the photo i'm trying to import from my phone gallery in string form
-        Bitmap bitmap;
-        bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(targetUri));
-        imageView.setImageURI(new Uri);
-
+        //Bitmap bitmap;
+        //bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(targetUri));
+        System.out.println(photos.get(position)+ "dfdsfdsf");
+        imageView.setImageURI(photos.get(position));
+//Uri.parse
         return imageView;
     }
 
 
     // references to our images
-    public Integer[] photo = {
-          
-    };
+    public static ArrayList<Uri> photos = new ArrayList<Uri>();
 
 }

@@ -25,15 +25,21 @@ import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.Data;
 import android.provider.MediaStore;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.database.Cursor;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.SimpleCursorAdapter;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
@@ -222,11 +228,13 @@ public class MainActivity extends Activity {
 
 		if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && null != data) {
 			Uri selectedImage = data.getData();
-			String[] filePathColumn = { MediaStore.Images.Media.INTERNAL_CONTENT_URI, MediaStore.Images.Media._ID};
+			String[] filePathColumn = { MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID};
+			//String[] filePathColumn = { MediaStore.Images.Media.INTERNAL_CONTENT_URI};
 
 			Cursor cursor = getContentResolver().query(selectedImage,
 					filePathColumn, null, null, null);
-			System.out.println("id dfsdf");
+
+			System.out.println(selectedImage.toString());
 
 			int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
 			cursor.moveToNext();
@@ -234,23 +242,60 @@ public class MainActivity extends Activity {
 
 			//String[] fromColumns = {ContactsContract.Data.DISPLAY_NAME,  ContactsContract.CommonDataKinds.Phone.NUMBER};
 			//int[] toViews = {R.id.imageview};
-			ImageView imageView;
+			/*ImageView imageView;
 			imageView = new ImageView(this);
 			imageView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 			/*imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
 			imageView.setPadding(8, 8, 8, 8);*/
-			System.out.println("id "+ imageView.getId());
+			/*System.out.println("id "+ imageView.getId());
 			imageView.setId(5465465);
 			System.out.println("id "+ imageView.getId());
 			int[] toViews = {imageView.getId()};
 
 
 			SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, 
-					R.layout.image, cursor, filePathColumn, toViews, 0);
-
+					R.layout.image, caursor, filePathColumn, toViews, 0);*/
+			if(ImageAdapter.photos.contains(selectedImage)){
+				return;
+			}
+			final ImageAdapter adapter = new ImageAdapter(this);
+			adapter.photos.add(selectedImage);
 			GridView gridview = (GridView) findViewById(R.id.gridview);
 			gridview.setAdapter(adapter);
 			adapter.notifyDataSetChanged();
+
+			/**
+			 * On Click event for Single Gridview Item
+			 * */
+
+			gridview.setOnItemClickListener(new OnItemClickListener() {
+				public void onItemClick(AdapterView<?> parent, View v, final int position, long id) {
+
+					AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+					alertDialog.setTitle("This photo will be removed.");
+					alertDialog.setMessage("Are you sure?");
+					
+					 class ClickListener implements OnClickListener{
+						public void onClick(DialogInterface dialog, int which) {
+							if(which == DialogInterface.BUTTON_POSITIVE){
+								ImageAdapter.photos.remove(position);
+								adapter.notifyDataSetChanged();
+							}
+						}
+		
+					};
+					
+					ClickListener clicklistener = new ClickListener();
+					alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "CANCEL", clicklistener );
+					alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "OK",clicklistener);		
+
+
+					//alertDialog.setIcon(R.drawable.icon);
+					alertDialog.show();
+					Toast.makeText(MainActivity.this, "" + position + " "+ id, Toast.LENGTH_SHORT).show();
+				}
+			});
+
 
 			//cursor.close();
 
