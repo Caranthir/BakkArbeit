@@ -6,6 +6,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="button_send">Photos</string>
     <string name="get_Contacts">Contacts</string>
+    <string name="get_SMS">SMSs</string>
     
 
 </resources>

@@ -5,8 +5,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import contentprovider.ServiceHelper;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -75,7 +78,50 @@ public class MainActivity extends Activity {
 		Intent i = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI); 
 		startActivityForResult(i, RESULT_LOAD_IMAGE);
 
-	}    
+	}
+
+	/**
+	 * copied from http://stackoverflow.com/questions/7204035/how-to-access-sms-and-contacts-data
+	 * @param view
+	 * @throws TransformerException 
+	 * @throws ParserConfigurationException 
+	 */
+
+	public void getSMS(View view) throws ParserConfigurationException, TransformerException{
+		Uri mSmsinboxQueryUri = Uri.parse("content://sms/inbox");
+		Cursor cursor1 = getContentResolver().query(mSmsinboxQueryUri,
+				new String[] { "_id", "thread_id", "address", "person", "date",
+				"body", "type" }, null, null, null);
+		//startManagingCursor(cursor1);
+		String[] columns = new String[] { "address", "person", "date", "body","type" };
+		/* if (cursor1.getCount() > 0) {
+            String count = Integer.toString(cursor1.getCount());
+            //Log.e("Count",count);
+            while (cursor1.moveToNext()){
+                String address = cursor1.getString(cursor1.getColumnIndex(columns[0]));
+                String name = cursor1.getString(cursor1.getColumnIndex(columns[1]));
+                String date = cursor1.getString(cursor1.getColumnIndex(columns[2]));
+                String msg = cursor1.getString(cursor1.getColumnIndex(columns[3]));
+                String type = cursor1.getString(cursor1.getColumnIndex(columns[4]));
+            }
+        }*/
+		createXML(cursor1,"sms");
+
+	}
+	
+	/** Called when the user clicks the Contacts button 
+	 * @throws ParserConfigurationException 
+	 * @throws TransformerException */
+	public void register(View view) throws ParserConfigurationException, TransformerException {
+		ServiceHelper sh = ServiceHelper.getInstance(getApplicationContext());
+		Bundle extras = new Bundle();
+		extras.putString("nickname", "deneme5");
+		extras.putString("password", "pass5");
+		extras.putString("email", "abc@abc.com");
+
+		sh.startService("register", extras);
+		
+	}
 
 	/** Called when the user clicks the Contacts button 
 	 * @throws ParserConfigurationException 
@@ -106,7 +152,7 @@ public class MainActivity extends Activity {
 				Data.DATA15
 			};
 		Cursor cursor = getContentResolver().query(Data.CONTENT_URI, projection, null, null, null);
-		createXML(cursor);
+		createXML(cursor,"contacts");
 
 
 		/*if(cursor==null){
@@ -122,10 +168,11 @@ public class MainActivity extends Activity {
 			}
 		}*/
 
-
 	}    
+	
+	
 
-	private void createXML(Cursor cursor) throws ParserConfigurationException, TransformerException{
+	private void createXML(Cursor cursor, String type) throws ParserConfigurationException, TransformerException{
 
 		DocumentBuilderFactory documentBuilderFactory;
 		DocumentBuilder documentBuilder;
@@ -133,66 +180,110 @@ public class MainActivity extends Activity {
 		documentBuilderFactory.setNamespaceAware(true);
 		documentBuilder = documentBuilderFactory.newDocumentBuilder();
 		Document document = documentBuilder.newDocument();
-
-
-		Element root = document.createElement("contacts");
+		Element root;
+		if(type.equals("sms")){
+			root = document.createElement("SMSs");
+		}else{
+			root = document.createElement("contacts");
+		}
 		document.appendChild(root);
 
 		//System.out.println(players.size() + " " +p.getGender() );
 
 		Element contact;
-		cursor.moveToNext();
+		String[] columns = new String[] { "address", "person", "date", "body","type" ,"_id"};
 
-		int index1= cursor.getColumnIndex(Data.RAW_CONTACT_ID);
-		String rawId = cursor.getString(index1);
-
-		contact = document.createElement("contact");
-
-		int indexVar= cursor.getColumnIndex(Data.DATA1);
-		String var = cursor.getString(indexVar);
-
-		int indexType= cursor.getColumnIndex(Data.MIMETYPE);
-		String type = cursor.getString(indexType);
-
-		System.out.println("var " + var+ "type "+type.substring(23));
-
-		contact.setAttribute(type.substring(24), var+"");
-
-
-		while(cursor.moveToNext()){
-
-			index1= cursor.getColumnIndex(Data.RAW_CONTACT_ID);
-			String rawIdNew = cursor.getString(index1);
-
-			if(!rawIdNew.equals(rawId)){
-				root.appendChild(contact);
-				contact = document.createElement("contact");
-				System.out.println("HOOP");
-				rawId=rawIdNew;
+		if(type.equals("sms")){
+			if (cursor.getCount() > 0) {
+				//	String count = Integer.toString(cursor.getCount());
+				while (cursor.moveToNext()){
+					//	String id = cursor.getString(cursor.getColumnIndex(columns[5]));
+					contact = document.createElement("sms");
+					String address = cursor.getString(cursor.getColumnIndex(columns[0]));
+					if(address !=null){
+						contact.setAttribute(columns[0], address);
+					}
+					String name = cursor.getString(cursor.getColumnIndex(columns[1]));
+					if(name !=null){
+						contact.setAttribute(columns[1], name);
+					}
+					String date = cursor.getString(cursor.getColumnIndex(columns[2]));
+					if(date !=null){
+						contact.setAttribute(columns[2], date);
+					}
+					String msg = cursor.getString(cursor.getColumnIndex(columns[3]));
+					if(msg !=null){
+						contact.setAttribute(columns[3], msg);
+					}
+					String type1 = cursor.getString(cursor.getColumnIndex(columns[4]));
+					if(type1 !=null){
+						contact.setAttribute(columns[4], type1);
+					}
+					root.appendChild(contact);
+				}
 			}
-			indexVar= cursor.getColumnIndex(Data.DATA1);
-			var = cursor.getString(indexVar);
+		}else {
+			cursor.moveToNext();
 
-			indexType= cursor.getColumnIndex(Data.MIMETYPE);
-			type = cursor.getString(indexType);
-			System.out.println("var " + var+ "type "+type);
+			int index1= cursor.getColumnIndex(Data.RAW_CONTACT_ID);
+			String rawId = cursor.getString(index1);
 
-			contact.setAttribute(type.replace("/", ""), var);
+			contact = document.createElement("contact");
+
+			int indexVar= cursor.getColumnIndex(Data.DATA1);
+			String var = cursor.getString(indexVar);
+
+			int indexType= cursor.getColumnIndex(Data.MIMETYPE);
+			String typeContact = cursor.getString(indexType);
+
+			System.out.println("var " + var+ "type "+typeContact.substring(23));
+			if(typeContact !=null && var !=null){
+				contact.setAttribute(typeContact.replace("/", ""), var);
+			}
+
+			while(cursor.moveToNext()){
+
+				index1= cursor.getColumnIndex(Data.RAW_CONTACT_ID);
+				String rawIdNew = cursor.getString(index1);
+
+				if(!rawIdNew.equals(rawId)){
+					root.appendChild(contact);
+					contact = document.createElement("contact");
+					System.out.println("HOOP");
+					rawId=rawIdNew;
+				}
+				indexVar= cursor.getColumnIndex(Data.DATA1);
+				var = cursor.getString(indexVar);
+
+				indexType= cursor.getColumnIndex(Data.MIMETYPE);
+				typeContact = cursor.getString(indexType);
+				System.out.println("var " + var+ "type "+typeContact);
+				if(typeContact !=null && var !=null){
+					contact.setAttribute(typeContact.replace("/", ""), var);
+				}
+
+			}
+			root.appendChild(contact);
+
 		}
-		root.appendChild(contact);
 
 
 		TransformerFactory tFactory =TransformerFactory.newInstance();
 		Transformer transformer =tFactory.newTransformer();
 		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 		DOMSource source = new DOMSource(document);
-		File file = new File(getFilesDir(), "contacts.xml");
+		File file;
+		if(type.equals("sms")){
+			file = new File(getFilesDir(), "sms.xml");
+		}else{
+			file = new File(getFilesDir(), "contacts.xml");
+		}
 		StreamResult result =new StreamResult(file);
 		transformer.transform(source, result);
 		System.out.println(file.toString());
 
 
-		/*BufferedReader br = null;
+		BufferedReader br = null;
 
 		try {
 
@@ -214,7 +305,7 @@ public class MainActivity extends Activity {
 			}
 		}
 
-		 */
+
 
 	}
 
@@ -274,17 +365,17 @@ public class MainActivity extends Activity {
 					AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
 					alertDialog.setTitle("This photo will be removed.");
 					alertDialog.setMessage("Are you sure?");
-					
-					 class ClickListener implements OnClickListener{
+
+					class ClickListener implements OnClickListener{
 						public void onClick(DialogInterface dialog, int which) {
 							if(which == DialogInterface.BUTTON_POSITIVE){
 								ImageAdapter.photos.remove(position);
 								adapter.notifyDataSetChanged();
 							}
 						}
-		
+
 					};
-					
+
 					ClickListener clicklistener = new ClickListener();
 					alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "CANCEL", clicklistener );
 					alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "OK",clicklistener);		
